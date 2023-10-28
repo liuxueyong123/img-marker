@@ -4,6 +4,14 @@ import Shape from './index'
 export default class Rect extends Shape {
   public type = ShapeType.rect
 
+  public static MIN_WIDTH = 10
+  public static MIN_HEIGHT = 10
+
+  constructor (item: any, index: number) {
+    super(item, index)
+    this.type = ShapeType.rect
+  }
+
   get ctrlsData (): Point[] {
     const [[x0, y0], [x1, y1]] = this.coor
     return [

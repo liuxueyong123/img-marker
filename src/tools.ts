@@ -12,3 +12,7 @@ export const createUuid = (): string => {
     return (c === 'x' ? random : (random & 0x3) | 0x8).toString(16)
   })
 }
+
+export const isMobile = (): boolean => {
+  return window.navigator?.userAgent.includes('Mobile')
+}

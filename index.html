@@ -16,15 +16,32 @@
 </head>
 <body>
   <canvas id="test"></canvas>
+  <div class="conainer">
+    <div class="handler-container">
+      <button id="rectBtn">矩形标注</button>
+      <button id="editBtn">指针模式</button>
+    </div>
+    <div class="data-container"></div>
+  </div>
   <script src="./lib/index.umd.js"></script>
   <script>
     const imgMarker = new ImgMarker("#test", "https://web-cdn.agora.io/website-files/images/new-home-2-banne-whiteboard-bg.jpg")
     imgMarker.setData([
       {
-        coor: [[20, 40], [220, 160]],
+        coor: [[160, 40], [400, 160]],
         type: 1
       },
     ])
+  
+
+    window.onload = () => {
+      document.querySelector('#rectBtn').addEventListener('click', () => {
+        imgMarker.currentMode = 1
+      })
+      document.querySelector('#editBtn').addEventListener('click', () => {
+        imgMarker.currentMode = 0
+      })
+    }
   </script>
 </body>
 </html>

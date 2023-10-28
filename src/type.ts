@@ -6,3 +6,7 @@ export type AllShape = Rect
 export enum ShapeType {
   rect = 1
 }
+export enum MarkMode {
+  edit = 0,
+  rect = ShapeType.rect
+}
