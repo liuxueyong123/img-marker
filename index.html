@@ -2,11 +2,29 @@
 <html lang="en">
 <head>
   <meta charset="UTF-8">
+  <meta name="referrer" content="no-referrer">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title>Document</title>
+  <style>
+    #test {
+      margin: 100px auto 0;
+      width: 80vw;
+      height: 240px;
+      display: block;
+    }
+  </style>
 </head>
 <body>
-  <div>test</div>
-  <script src="./lib/index.esm.js"></script>
+  <canvas id="test"></canvas>
+  <script src="./lib/index.umd.js"></script>
+  <script>
+    const imgMarker = new ImgMarker("#test", "https://web-cdn.agora.io/website-files/images/new-home-2-banne-whiteboard-bg.jpg")
+    imgMarker.setData([
+      {
+        coor: [[20, 40], [220, 160]],
+        type: 1
+      },
+    ])
+  </script>
 </body>
 </html>

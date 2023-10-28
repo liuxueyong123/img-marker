@@ -34,6 +34,21 @@ const config = [
   },
   {
     input: 'src/index.ts',
+    output: [
+      {
+        file: './lib/index.umd.js',
+        format: 'umd',
+        name: 'ImgMarker'
+      }
+    ],
+    plugins: [
+      typescript(),
+      terser(),
+      cleanup()
+    ]
+  },
+  {
+    input: 'src/index.ts',
     output: [{ file: 'lib/index.d.ts', format: 'esm' }],
     plugins: [dts()]
   }
