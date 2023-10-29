@@ -44,6 +44,8 @@ class ImgMarker {
   currentMode = MarkMode.edit
   /** 控制点索引 */
   ctrlIndex = -1
+  /** 当前鼠标位置 */
+  currentMousePoint: Point = [0, 0]
 
   /** 当前当前选中的标注 */
   get activeShape (): AllShape | null {
@@ -116,15 +118,15 @@ class ImgMarker {
     e.stopPropagation()
     const { mouseX, mouseY, mouseCX, mouseCY } = this.mergeEvent(e)
     const mouse: Point = isMobile() && (e as TouchEvent).touches.length === 2 ? [mouseCX, mouseCY] : [mouseX, mouseY]
-    // this.remmberOrigin = [mouseX - this.originX, mouseY - this.originY]
     if ((!isMobile() && (e as MouseEvent).buttons === 1) || (isMobile() && (e as TouchEvent).touches.length === 1)) { // 鼠标左键
+      this.currentMousePoint = mouse
       const ctrls = this.activeShape?.ctrlsData ?? []
       this.ctrlIndex = ctrls.findIndex((coor: Point) => this.isPointInCircle(mouse, coor, this.ctrlRadius))
       if (this.ctrlIndex > -1) { // 点击到控制点
-        // const [x0, y0] = ctrls[this.ctrlIndex]
-        // this.remmber = [[mouseX - x0, mouseY - y0]]
         return
-      } else if (this.currentMode > MarkMode.edit) { // 开始创建
+      }
+
+      if (this.currentMode > MarkMode.edit) { // 开始创建
         let newShape
         const curPoint: Point = [mouseX, mouseY]
         switch (this.currentMode) {
@@ -141,31 +143,18 @@ class ImgMarker {
         newShape.active = true
         this.dataset.push(newShape)
       } else { // 是否点击到形状
-        // const [hitShapeIndex, hitShape] = this.hitOnShape(mouse)
-        // if (hitShapeIndex > -1) {
-        //   this.dataset.forEach((item, i) => item.active = i === hitShapeIndex)
-        //   if (this.currentMode !== -1) {
-        //     hitShape.dragging = true
-        //   }
-        //   this.dataset.splice(hitShapeIndex, 1)
-        //   this.dataset.push(hitShape)
-        //   this.remmber = []
-        //   if ([3, 5].includes(hitShape.type)) {
-        //     const [x, y] = hitShape.coor
-        //     this.remmber = [[mouseX - x, mouseY - y]]
-        //   } else {
-        //     hitShape.coor.forEach((pt: any) => {
-        //       this.remmber.push([mouseX - pt[0], mouseY - pt[1]])
-        //     })
-        //   }
-        //   // this.emit('select', hitShape)
-        // } else {
-        //   this.activeShape.active = false
-        //   this.dataset.sort((a, b) => a.index - b.index)
-        //   if (this.currentMode === -1) {
-        //     // this.emit('select', null)
-        //   }
-        // }
+        const { isOnShape, index, shape } = this.hitOnShape(mouse)
+        if (!isOnShape) {
+          if (this.activeShape) {
+            this.activeShape.active = false
+          }
+          this.dataset.sort((a, b) => a.index - b.index)
+        } else {
+          this.dataset.map((item, i) => item.active = i === index)
+          shape.dragging = true
+          this.dataset.splice(index, 1)
+          this.dataset.push(shape)
+        }
       }
 
       this.update()
@@ -175,10 +164,9 @@ class ImgMarker {
   handelMouseMove (e: MouseEvent | TouchEvent) {
     e.stopPropagation()
     const { mouseX, mouseY, mouseCX, mouseCY } = this.mergeEvent(e)
-    // this.mouse = isMobile() && (e as TouchEvent).touches.length === 2 ? [mouseCX, mouseCY] : [mouseX, mouseY]
+    const mouse: Point = isMobile() && (e as TouchEvent).touches.length === 2 ? [mouseCX, mouseCY] : [mouseX, mouseY]
     if (((!isMobile() && (e as MouseEvent).buttons === 1) || (isMobile() && (e as TouchEvent).touches.length === 1)) && this.activeShape?.type) {
       if (this.ctrlIndex > -1) {
-        // const [[x, y]] = this.remmber
         // resize矩形
         if (this.activeShape.type === ShapeType.rect) {
           const [[x0, y0], [x1, y1]] = this.activeShape.coor
@@ -217,26 +205,26 @@ class ImgMarker {
           }
         }
       } else if (this.activeShape.dragging) { // 拖拽
-        // const coor = []
-        // let noLimit = true
-        // const w = this.IMAGE_ORIGIN_WIDTH || this.CANVAS_WIDTH
-        // const h = this.IMAGE_ORIGIN_HEIGHT || this.CANVAS_HEIGHT
+        const coor = []
+        let noLimit = true
+        for (let i = 0; i < this.activeShape.coor.length; i++) {
+          const [initialX, initialY] = this.activeShape.coor[i]
+          const x = initialX + mouseX - this.currentMousePoint[0]
+          const y = initialY + mouseY - this.currentMousePoint[1]
+          if (x < 0 || x > this.CANVAS_WIDTH || y < 0 || y > this.CANVAS_HEIGHT) {
+            noLimit = false
+          }
+          coor.push([x, y])
+        }
 
-        // for (let i = 0; i < this.activeShape.coor.length; i++) {
-        //   const tar = this.remmber[i]
-        //   const x = mouseX - tar[0]
-        //   const y = mouseY - tar[1]
-        //   if (x < 0 || x > w || y < 0 || y > h) noLimit = false
-        //   coor.push([x, y])
-        // }
-
-        // if (noLimit) this.activeShape.coor = coor
+        if (noLimit) this.activeShape.coor = coor
       } else if (this.activeShape.creating) {
         // 创建矩形
         if (this.activeShape.type === ShapeType.rect) {
           this.activeShape.coor.splice(1, 1, [mouseX, mouseY])
         }
       }
+      this.currentMousePoint = mouse
       this.update()
     }
   }
@@ -423,6 +411,47 @@ class ImgMarker {
     const [x0, y0] = center
     const distance = Math.sqrt((x0 - x) ** 2 + (y0 - y) ** 2)
     return distance <= r
+  }
+
+  /**
+     * 判断是否在矩形内
+     * @param point 坐标
+     * @param coor 区域坐标
+     * @returns 布尔值
+     */
+  isPointInRect (point: Point, coor: Point[]): boolean {
+    const [x, y] = point
+    const [[x0, y0], [x1, y1]] = coor
+    return x0 <= x &&
+            x <= x1 &&
+            y0 <= y &&
+            y <= y1
+  }
+
+  /**
+     * 判断是否在标注实例上
+     * @param mousePoint 点击位置
+     * @returns
+     */
+  hitOnShape (mousePoint: Point):
+  { isOnShape: true, shape: AllShape, index: number } | { isOnShape: false, index: -1, shape: null } {
+    for (let i = this.dataset.length - 1; i >= 0; i--) {
+      const shape = this.dataset[i]
+      if (
+        (shape.type === ShapeType.rect && this.isPointInRect(mousePoint, (shape).coor))
+      ) {
+        return {
+          isOnShape: true,
+          index: i,
+          shape
+        }
+      }
+    }
+    return {
+      isOnShape: false,
+      index: -1,
+      shape: null
+    }
   }
 }
 
