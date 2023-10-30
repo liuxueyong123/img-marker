@@ -70,8 +70,8 @@
   <script src="./lib/index.umd.js"></script>
   <script>
     window.onload = () => {
-      const imgMarker = new ImgMarker("#myCanvas", "https://lxy520.top/myImage/202310301200291.png")
-      imgMarker.currentMode = 1;
+      const imgMarker = new ImgMarker.default("#myCanvas", "https://lxy520.top/myImage/202310301200291.png")
+      imgMarker.setMode(ImgMarker.MarkMode.rect)
       imgMarker.setData([
         {
           coor: [[12, 40], [640, 100]],
@@ -98,7 +98,7 @@
       document.querySelector('#export').addEventListener('click', () => {
         const dom = document.querySelector('#resultImg')
         dom.style.display = 'block'
-        dom.src = imgMarker.exportImg()
+        dom.src = imgMarker.exportImg("image/jpeg", 0.9)
       })
       document.querySelector('#reloadData').addEventListener('click', () => {
         document.querySelector('#dataContainer').innerText = JSON.stringify(imgMarker.dataset, null, 2)

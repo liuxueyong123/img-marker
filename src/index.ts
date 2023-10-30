@@ -4,17 +4,17 @@ import { ShapeType, type AllShape, type Point, MarkMode } from './type'
 
 class ImgMarker {
   /** 画布宽度 */
-  CANVAS_WIDTH = 0
+  private CANVAS_WIDTH = 0
   /** 画布高度 */
-  CANVAS_HEIGHT = 0
+  private CANVAS_HEIGHT = 0
   /** 图片原始宽度 */
-  IMAGE_ORIGIN_WIDTH = 0
+  private IMAGE_ORIGIN_WIDTH = 0
   /** 图片原始高度 */
-  IMAGE_ORIGIN_HEIGHT = 0
+  private IMAGE_ORIGIN_HEIGHT = 0
   /** 图片缩放宽度 */
-  IMAGE_WIDTH = 0
+  private IMAGE_WIDTH = 0
   /** 图片缩放高度 */
-  IMAGE_HEIGHT = 0
+  private IMAGE_HEIGHT = 0
 
   /** 边线颜色 */
   strokeStyle = '#FFE729'
@@ -33,19 +33,19 @@ class ImgMarker {
   /** 控制点半径 */
   ctrlRadius = 4
 
-  canvas!: HTMLCanvasElement
-  ctx!: CanvasRenderingContext2D
+  private readonly canvas!: HTMLCanvasElement
+  private ctx!: CanvasRenderingContext2D
 
   /** 所有标注数据 */
-  dataset: AllShape[] = []
+  private dataset: AllShape[] = []
   /** 背景图片 */
-  image: HTMLImageElement = new Image()
+  private readonly image: HTMLImageElement = new Image()
   /** 当前行为 */
-  currentMode = MarkMode.edit
+  private currentMode = MarkMode.edit
   /** 控制点索引 */
-  ctrlIndex = -1
+  private ctrlIndex = -1
   /** 当前鼠标位置 */
-  currentMousePoint: Point = [0, 0]
+  private currentMousePoint: Point = [0, 0]
 
   /** 当前当前选中的标注 */
   get activeShape (): AllShape | null {
@@ -77,7 +77,7 @@ class ImgMarker {
   /**
      * 初始化配置
      */
-  initSetting (): void {
+  private initSetting (): void {
     // const dpr = window.devicePixelRatio || 1
     const dpr = 1
     this.ctx = this.ctx || this.canvas.getContext('2d', { alpha: true })
@@ -93,7 +93,7 @@ class ImgMarker {
   /**
      * 初始化事件
      */
-  initEvents (): void {
+  private initEvents (): void {
     this.image.addEventListener('load', this.handleLoad)
     // this.canvas.addEventListener('touchstart', this.handleMouseDown)
     // this.canvas.addEventListener('touchmove', this.handelMouseMove)
@@ -107,7 +107,7 @@ class ImgMarker {
   /**
      * 销毁
      */
-  destroy () {
+  public destroy () {
     this.image.removeEventListener('load', this.handleLoad)
     this.canvas.removeEventListener('mousedown', this.handleMouseDown)
     this.canvas.removeEventListener('mousemove', this.handelMouseMove)
@@ -115,14 +115,14 @@ class ImgMarker {
     document.body.removeEventListener('keyup', this.handelKeyup)
   }
 
-  handleLoad (): void {
+  private handleLoad (): void {
     this.IMAGE_ORIGIN_WIDTH = this.IMAGE_WIDTH = this.image.width
     this.IMAGE_ORIGIN_HEIGHT = this.IMAGE_HEIGHT = this.image.height
     this.fitZoom()
     this.update()
   }
 
-  handleMouseDown (e: MouseEvent | TouchEvent) {
+  private handleMouseDown (e: MouseEvent | TouchEvent) {
     e.stopPropagation()
     const { mouseX, mouseY, mouseCX, mouseCY } = this.mergeEvent(e)
     const mouse: Point = isMobile() && (e as TouchEvent).touches.length === 2 ? [mouseCX, mouseCY] : [mouseX, mouseY]
@@ -171,7 +171,7 @@ class ImgMarker {
     }
   }
 
-  handelMouseMove (e: MouseEvent | TouchEvent) {
+  private handelMouseMove (e: MouseEvent | TouchEvent) {
     e.stopPropagation()
     const { mouseX, mouseY, mouseCX, mouseCY } = this.mergeEvent(e)
     const mouse: Point = isMobile() && (e as TouchEvent).touches.length === 2 ? [mouseCX, mouseCY] : [mouseX, mouseY]
@@ -250,7 +250,7 @@ class ImgMarker {
     }
   }
 
-  handelMouseUp (e: MouseEvent | TouchEvent) {
+  private handelMouseUp (e: MouseEvent | TouchEvent) {
     e.stopPropagation()
     this.ctrlIndex = -1
     if (this.activeShape?.type) {
@@ -270,7 +270,7 @@ class ImgMarker {
     }
   }
 
-  handelKeyup (e: KeyboardEvent) {
+  private handelKeyup (e: KeyboardEvent) {
     e.stopPropagation()
 
     if (this.activeShape?.type) {
@@ -283,7 +283,7 @@ class ImgMarker {
   /**
      * 适配背景图
      */
-  fitZoom (): void {
+  public fitZoom (): void {
     const canvasAspectRate = this.CANVAS_WIDTH / this.CANVAS_HEIGHT
     const originalAspectRate = this.IMAGE_ORIGIN_WIDTH / this.IMAGE_ORIGIN_HEIGHT
     if (canvasAspectRate > originalAspectRate) {
@@ -299,7 +299,7 @@ class ImgMarker {
      * 设置数据
      * @param data Array
      */
-  setData (data: AllShape[]): void {
+  public setData (data: AllShape[]): void {
     this.dataset = data.map((item, index) => {
       switch (item.type) {
         case ShapeType.rect:
@@ -312,10 +312,18 @@ class ImgMarker {
   }
 
   /**
+     * 设置当前行为
+     * @param mode MarkMode
+     */
+  public setMode (mode: MarkMode) {
+    this.currentMode = mode
+  }
+
+  /**
      * 删除指定标注
      * @param index number
      */
-  deleteByIndex (index: number) {
+  public deleteByIndex (index: number) {
     const num = this.dataset.findIndex((x) => x.index === index)
     if (num > -1) {
       this.dataset.splice(num, 1)
@@ -327,7 +335,7 @@ class ImgMarker {
   /**
      * 更新画布
      */
-  update (): void {
+  public update (): void {
     this.ctx.save()
     this.ctx.clearRect(0, 0, this.CANVAS_WIDTH, this.CANVAS_HEIGHT)
     this.drawShapes()
@@ -341,7 +349,7 @@ class ImgMarker {
      * 绘制标记的图形到 canvas 上
      * @returns
      */
-  drawShapes () {
+  private drawShapes () {
     for (let i = 0; i < this.dataset.length; i++) {
       const shape = this.dataset[i]
       switch (shape.type) {
@@ -358,7 +366,7 @@ class ImgMarker {
      * 绘制底图到 canvas 上
      * @returns
      */
-  drawImg () {
+  private drawImg () {
     const x = (this.CANVAS_WIDTH - this.IMAGE_WIDTH) / 2
     const y = (this.CANVAS_HEIGHT - this.IMAGE_HEIGHT) / 2
     this.ctx.drawImage(this.image, x, y, this.IMAGE_WIDTH, this.IMAGE_HEIGHT)
@@ -369,7 +377,7 @@ class ImgMarker {
      * @param shape 标注实例
      * @returns
      */
-  drawRect (shape: Rect): void {
+  private drawRect (shape: Rect): void {
     if (shape.coor.length !== 2) return
     const { strokeStyle, fillStyle, active, creating, coor, lineWidth } = shape
     const [[x0, y0], [x1, y1]] = coor
@@ -388,7 +396,7 @@ class ImgMarker {
      * 绘制控制点列表
      * @param shape 标注实例
      */
-  drawCtrlList (shape: AllShape) {
+  private drawCtrlList (shape: AllShape) {
     shape.ctrlsData.forEach((point, i) => {
       this.drawCtrl(point)
     })
@@ -398,7 +406,7 @@ class ImgMarker {
      * 绘制控制点
      * @param point 坐标
      */
-  drawCtrl (point: Point) {
+  private drawCtrl (point: Point) {
     const [x, y] = point
     this.ctx.save()
     this.ctx.beginPath()
@@ -415,7 +423,7 @@ class ImgMarker {
      * 添加/切换图片
      * @param url 图片链接
      */
-  setImage (url: string): void {
+  public setImage (url: string): void {
     this.image.src = url
     this.image.crossOrigin = 'anonymous'
     this.canvas.style.backgroundImage = `url("${url}")`
@@ -428,16 +436,20 @@ class ImgMarker {
      * 添加/切换图片
      * @param url 图片链接
      */
-  exportImg () {
+  public exportImg (type = 'image/png', quality = 1) {
     this.ctx.save()
     this.ctx.clearRect(0, 0, this.CANVAS_WIDTH, this.CANVAS_HEIGHT)
+    this.ctx.fillStyle = '#fff'
+    this.ctx.fillRect(
+      0,
+      0,
+      this.CANVAS_WIDTH,
+      this.CANVAS_HEIGHT
+    )
     this.drawImg()
     this.drawShapes()
     this.ctx.restore()
-    const result = this.canvas.toDataURL(
-      'image/jpeg',
-      1
-    )
+    const result = this.canvas.toDataURL(type, quality)
     return result
   }
 
@@ -446,7 +458,7 @@ class ImgMarker {
      * @param e
      * @returns
      */
-  mergeEvent (e: TouchEvent | MouseEvent) {
+  private mergeEvent (e: TouchEvent | MouseEvent) {
     let mouseX = 0
     let mouseY = 0
     let mouseCX = 0
@@ -477,7 +489,7 @@ class ImgMarker {
      * @param needScale 是否为圆形点击检测
      * @returns 布尔值
      */
-  isPointInCircle (point: Point, center: Point, r: number): boolean {
+  private isPointInCircle (point: Point, center: Point, r: number): boolean {
     const [x, y] = point
     const [x0, y0] = center
     const distance = Math.sqrt((x0 - x) ** 2 + (y0 - y) ** 2)
@@ -490,7 +502,7 @@ class ImgMarker {
      * @param coor 区域坐标
      * @returns 布尔值
      */
-  isPointInRect (point: Point, coor: Point[]): boolean {
+  private isPointInRect (point: Point, coor: Point[]): boolean {
     const [x, y] = point
     const [[x0, y0], [x1, y1]] = coor
     return x0 <= x &&
@@ -504,7 +516,7 @@ class ImgMarker {
      * @param mousePoint 点击位置
      * @returns
      */
-  isHitOnShape (mousePoint: Point):
+  private isHitOnShape (mousePoint: Point):
   { isOnShape: true, shape: AllShape, index: number } | { isOnShape: false, index: -1, shape: null } {
     for (let i = this.dataset.length - 1; i >= 0; i--) {
       const shape = this.dataset[i]
@@ -530,7 +542,7 @@ class ImgMarker {
      * @param cursor 鼠标样式
      * @returns
      */
-  changeCursor (cursor: string) {
+  private changeCursor (cursor: string) {
     this.canvas.style.cursor = cursor
   }
 }
