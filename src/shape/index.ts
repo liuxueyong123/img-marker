@@ -14,7 +14,7 @@ export default class Shape {
   /** 填充颜色 */
   public fillStyle: string = 'rgba(255,231,41, 0.2)'
   /** 边线宽度 */
-  public lineWidth: number = 1
+  public lineWidth: number = 4
   /** 默认为矩形 */
   public type: ShapeType = ShapeType.rect
   /** 当前是否处于活动状态 */

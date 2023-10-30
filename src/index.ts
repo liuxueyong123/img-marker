@@ -21,13 +21,13 @@ class ImgMarker {
   /** 填充颜色 */
   fillStyle = 'rgba(255,231,41, 0.2)'
   /** 边线宽度 */
-  lineWidth = 1
+  lineWidth = 4
   /** 当前选中的标注边线颜色 */
   activeStrokeStyle = '#FFE729'
   /** 当前选中的标注填充颜色 */
   activeFillStyle = 'rgba(255,231,41, 0.2)'
   /** 控制点边线颜色 */
-  ctrlStrokeStyle = '#000'
+  ctrlStrokeStyle = '#505E72'
   /** 控制点填充颜色 */
   ctrlFillStyle = '#fff'
   /** 控制点半径 */
@@ -123,6 +123,7 @@ class ImgMarker {
       const ctrls = this.activeShape?.ctrlsData ?? []
       this.ctrlIndex = ctrls.findIndex((coor: Point) => this.isPointInCircle(mouse, coor, this.ctrlRadius))
       if (this.ctrlIndex > -1) { // 点击到控制点
+        this.changeCursor('nwse-resize')
         return
       }
 
@@ -143,13 +144,14 @@ class ImgMarker {
         newShape.active = true
         this.dataset.push(newShape)
       } else { // 是否点击到形状
-        const { isOnShape, index, shape } = this.hitOnShape(mouse)
+        const { isOnShape, index, shape } = this.isHitOnShape(mouse)
         if (!isOnShape) {
           if (this.activeShape) {
             this.activeShape.active = false
           }
           this.dataset.sort((a, b) => a.index - b.index)
         } else {
+          this.changeCursor('move')
           this.dataset.map((item, i) => item.active = i === index)
           shape.dragging = true
           this.dataset.splice(index, 1)
@@ -165,9 +167,19 @@ class ImgMarker {
     e.stopPropagation()
     const { mouseX, mouseY, mouseCX, mouseCY } = this.mergeEvent(e)
     const mouse: Point = isMobile() && (e as TouchEvent).touches.length === 2 ? [mouseCX, mouseCY] : [mouseX, mouseY]
+    const { isOnShape, shape } = this.isHitOnShape(mouse)
+    if (this.ctrlIndex > -1) {
+      this.changeCursor('nwse-resize')
+    } else if (this.currentMode > MarkMode.edit) {
+      this.changeCursor('copy')
+    } else if (!isOnShape) {
+      this.changeCursor('default')
+    } else {
+      this.changeCursor(shape.active ? 'move' : 'pointer')
+    }
+
     if (((!isMobile() && (e as MouseEvent).buttons === 1) || (isMobile() && (e as TouchEvent).touches.length === 1)) && this.activeShape?.type) {
-      if (this.ctrlIndex > -1) {
-        // resize矩形
+      if (this.ctrlIndex > -1) { // 点击到控制点
         if (this.activeShape.type === ShapeType.rect) {
           const [[x0, y0], [x1, y1]] = this.activeShape.coor
           let coor: Point[] = []
@@ -219,6 +231,7 @@ class ImgMarker {
 
         if (noLimit) this.activeShape.coor = coor
       } else if (this.activeShape.creating) {
+        this.changeCursor('nwse-resize')
         // 创建矩形
         if (this.activeShape.type === ShapeType.rect) {
           this.activeShape.coor.splice(1, 1, [mouseX, mouseY])
@@ -231,16 +244,7 @@ class ImgMarker {
 
   handelMouseUp (e: MouseEvent | TouchEvent) {
     e.stopPropagation()
-    // if (isMobile()) {
-    //   if ((e as TouchEvent).touches.length === 0) {
-    //     this.isTouch2 = false
-    //   }
-    //   if ((Date.now() - this.dblTouchStore) < this.dblTouch) {
-    //     this.handelDblclick(e)
-    //     return
-    //   }
-    //   this.dblTouchStore = Date.now()
-    // }
+    this.ctrlIndex = -1
     if (this.activeShape?.type) {
       this.activeShape.dragging = false
       if (this.activeShape.creating) {
@@ -295,6 +299,18 @@ class ImgMarker {
   update (): void {
     this.ctx.save()
     this.ctx.clearRect(0, 0, this.CANVAS_WIDTH, this.CANVAS_HEIGHT)
+    this.drawShapes()
+    if (this.activeShape && [ShapeType.rect].includes(this.activeShape.type)) {
+      this.drawCtrlList(this.activeShape)
+    }
+    this.ctx.restore()
+  }
+
+  /**
+     * 绘制标记的图形到 canvas 上
+     * @returns
+     */
+  drawShapes () {
     for (let i = 0; i < this.dataset.length; i++) {
       const shape = this.dataset[i]
       switch (shape.type) {
@@ -305,10 +321,16 @@ class ImgMarker {
           break
       }
     }
-    if (this.activeShape && [ShapeType.rect].includes(this.activeShape.type)) {
-      this.drawCtrlList(this.activeShape)
-    }
-    this.ctx.restore()
+  }
+
+  /**
+     * 绘制底图到 canvas 上
+     * @returns
+     */
+  drawImg () {
+    const x = (this.CANVAS_WIDTH - this.IMAGE_WIDTH) / 2
+    const y = (this.CANVAS_HEIGHT - this.IMAGE_HEIGHT) / 2
+    this.ctx.drawImage(this.image, x, y, this.IMAGE_WIDTH, this.IMAGE_HEIGHT)
   }
 
   /**
@@ -364,10 +386,28 @@ class ImgMarker {
      */
   setImage (url: string): void {
     this.image.src = url
+    this.image.crossOrigin = 'anonymous'
     this.canvas.style.backgroundImage = `url("${url}")`
     this.canvas.style.backgroundSize = 'contain'
     this.canvas.style.backgroundRepeat = 'no-repeat'
     this.canvas.style.backgroundPosition = 'center center'
+  }
+
+  /**
+     * 添加/切换图片
+     * @param url 图片链接
+     */
+  exportImg () {
+    this.ctx.save()
+    this.ctx.clearRect(0, 0, this.CANVAS_WIDTH, this.CANVAS_HEIGHT)
+    this.drawImg()
+    this.drawShapes()
+    this.ctx.restore()
+    const result = this.canvas.toDataURL(
+      'image/jpeg',
+      1
+    )
+    return result
   }
 
   /**
@@ -433,7 +473,7 @@ class ImgMarker {
      * @param mousePoint 点击位置
      * @returns
      */
-  hitOnShape (mousePoint: Point):
+  isHitOnShape (mousePoint: Point):
   { isOnShape: true, shape: AllShape, index: number } | { isOnShape: false, index: -1, shape: null } {
     for (let i = this.dataset.length - 1; i >= 0; i--) {
       const shape = this.dataset[i]
@@ -452,6 +492,15 @@ class ImgMarker {
       index: -1,
       shape: null
     }
+  }
+
+  /**
+     * 更改当前鼠标样式
+     * @param cursor 鼠标样式
+     * @returns
+     */
+  changeCursor (cursor: string) {
+    this.canvas.style.cursor = cursor
   }
 }
 

@@ -6,40 +6,102 @@
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title>Document</title>
   <style>
-    #test {
-      margin: 100px auto 0;
-      width: 80vw;
-      height: 240px;
+    .handler-container {
+      margin: 20px auto 20px;
+      border: 1px solid #333;
+      border-radius: 4px;
+      padding: 20px;
+      width: fit-content;
+      display: flex;
+      justify-content: center;
+      gap: 8px;
+    }
+
+    .container {
+      display: flex;
+      justify-content: center;
+      gap: 20px;
+    }
+
+    #myCanvas {
+      box-sizing: border-box;
+      flex-shrink: 0;
+      border: 1px solid #333;
+      border-radius: 4px;
+      width: 700px;
+      height: 700px;
       display: block;
+    }
+
+    #dataContainer {
+      margin: 0;
+      box-sizing: border-box;
+      flex-shrink: 0;
+      border: 1px solid #333;
+      border-radius: 4px;
+      width: 480px;
+      height: 700px;
+      padding: 20px;
+      overflow-y: auto;
+    }
+
+    #resultImg {
+      margin: 20px auto 0;
+      border: 1px solid #333;
+      border-radius: 4px;
+      width: 700px;
+      height: 700px;
+      display: none;
     }
   </style>
 </head>
 <body>
-  <canvas id="test"></canvas>
-  <div class="conainer">
-    <div class="handler-container">
-      <button id="rectBtn">矩形标注</button>
-      <button id="editBtn">指针模式</button>
-    </div>
-    <div class="data-container"></div>
+  <div class="handler-container">
+    <button id="rectBtn">矩形标注</button>
+    <button id="editBtn">指针模式</button>
+    <button id="export">导出图片</button>
+    <button id="reloadData">获取数据</button>
   </div>
+  <div class="container">
+    <canvas id="myCanvas"></canvas>
+    <pre id="dataContainer"></pre>
+  </div>
+  <img src="" id="resultImg" />
   <script src="./lib/index.umd.js"></script>
   <script>
-    const imgMarker = new ImgMarker("#test", "https://web-cdn.agora.io/website-files/images/new-home-2-banne-whiteboard-bg.jpg")
-    imgMarker.setData([
-      {
-        coor: [[160, 40], [400, 160]],
-        type: 1
-      },
-    ])
-  
-
     window.onload = () => {
-      document.querySelector('#rectBtn').addEventListener('click', () => {
+      const imgMarker = new ImgMarker("#myCanvas", "https://lxy520.top/myImage/202310301200291.png")
+      imgMarker.currentMode = 1;
+      imgMarker.setData([
+        {
+          coor: [[12, 40], [640, 100]],
+          type: 1
+        },
+      ])
+
+      const rectBtn = document.querySelector('#rectBtn')
+      const editBtn = document.querySelector('#editBtn')
+
+      rectBtn.style.backgroundColor = '#ade9ff'
+      document.querySelector('#dataContainer').innerText = JSON.stringify(imgMarker.dataset, null, 2)
+
+      rectBtn.addEventListener('click', () => {
+        rectBtn.style.backgroundColor = '#ade9ff'
+        editBtn.style.backgroundColor = 'buttonface'
         imgMarker.currentMode = 1
       })
-      document.querySelector('#editBtn').addEventListener('click', () => {
+      editBtn.addEventListener('click', () => {
+        editBtn.style.backgroundColor = '#ade9ff'
+        rectBtn.style.backgroundColor = 'buttonface'
         imgMarker.currentMode = 0
+      })
+      document.querySelector('#export').addEventListener('click', () => {
+        const dom = document.querySelector('#resultImg')
+        dom.style.display = 'block'
+        dom.src = imgMarker.exportImg()
+      })
+      document.querySelector('#reloadData').addEventListener('click', () => {
+        document.querySelector('#dataContainer').innerText = JSON.stringify(imgMarker.dataset, null, 2)
       })
     }
   </script>
