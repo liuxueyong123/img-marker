@@ -1,10 +1,10 @@
 <!DOCTYPE html>
-<html lang="en">
+<html lang="zh">
 <head>
   <meta charset="UTF-8">
   <meta name="referrer" content="no-referrer">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>Document</title>
+  <title>Img Marker Demo</title>
   <style>
     .handler-container {
       margin: 20px auto 20px;
@@ -67,7 +67,10 @@
     <pre id="dataContainer"></pre>
   </div>
   <img src="" id="resultImg" />
+  <!-- for dev -->
   <script src="./lib/index.umd.js"></script>
+  <!-- for demo -->
+  <!-- <script src="https://npm.onmicrosoft.cn/img-marker@^0/lib/index.umd.js"></script> -->
   <script>
     window.onload = () => {
       const imgMarker = new ImgMarker.default("#myCanvas", "https://lxy520.top/myImage/202310301200291.png")
