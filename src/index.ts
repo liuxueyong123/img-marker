@@ -536,3 +536,4 @@ class ImgMarker {
 }
 
 export default ImgMarker
+export { ShapeType, MarkMode }
