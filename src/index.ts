@@ -61,6 +61,7 @@ class ImgMarker {
     this.handleMouseDown = this.handleMouseDown.bind(this)
     this.handelMouseMove = this.handelMouseMove.bind(this)
     this.handelMouseUp = this.handelMouseUp.bind(this)
+    this.handelKeyup = this.handelKeyup.bind(this)
 
     const container = typeof el === 'string' ? document.querySelector(el) : el
     if (container instanceof HTMLCanvasElement) {
@@ -79,7 +80,6 @@ class ImgMarker {
   initSetting (): void {
     // const dpr = window.devicePixelRatio || 1
     const dpr = 1
-    // this.canvas.style.userSelect = 'none'
     this.ctx = this.ctx || this.canvas.getContext('2d', { alpha: true })
     this.CANVAS_WIDTH = this.canvas.clientWidth
     this.CANVAS_HEIGHT = this.canvas.clientHeight
@@ -101,10 +101,18 @@ class ImgMarker {
     this.canvas.addEventListener('mousedown', this.handleMouseDown)
     this.canvas.addEventListener('mousemove', this.handelMouseMove)
     this.canvas.addEventListener('mouseup', this.handelMouseUp)
-    // this.canvas.addEventListener('contextmenu', this.handleContextmenu)
-    // this.canvas.addEventListener('mousewheel', this.handleMousewheel)
-    // this.canvas.addEventListener('dblclick', this.handelDblclick)
-    // document.body.addEventListener('keyup', this.handelKeyup)
+    document.body.addEventListener('keyup', this.handelKeyup)
+  }
+
+  /**
+     * 销毁
+     */
+  destroy () {
+    this.image.removeEventListener('load', this.handleLoad)
+    this.canvas.removeEventListener('mousedown', this.handleMouseDown)
+    this.canvas.removeEventListener('mousemove', this.handelMouseMove)
+    this.canvas.removeEventListener('mouseup', this.handelMouseUp)
+    document.body.removeEventListener('keyup', this.handelKeyup)
   }
 
   handleLoad (): void {
@@ -262,6 +270,16 @@ class ImgMarker {
     }
   }
 
+  handelKeyup (e: KeyboardEvent) {
+    e.stopPropagation()
+
+    if (this.activeShape?.type) {
+      if (e.key === 'Backspace' || e.key === 'Escape') {
+        this.deleteByIndex(this.activeShape.index)
+      }
+    }
+  }
+
   /**
      * 适配背景图
      */
@@ -291,6 +309,19 @@ class ImgMarker {
       }
     })
     this.update()
+  }
+
+  /**
+     * 删除指定标注
+     * @param index number
+     */
+  deleteByIndex (index: number) {
+    const num = this.dataset.findIndex((x) => x.index === index)
+    if (num > -1) {
+      this.dataset.splice(num, 1)
+      this.dataset.forEach((item, i) => { item.index = i })
+      this.update()
+    }
   }
 
   /**
