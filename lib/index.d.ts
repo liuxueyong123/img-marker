@@ -19,18 +19,16 @@ declare class Shape {
     creating: boolean;
     /** 当前是否处于拖拽状态 */
     dragging: boolean;
-    /** 索引 */
-    index: number;
     /** 唯一标识 */
     uuid: string;
-    constructor(item: ShapeProp, index: number);
+    constructor(item: ShapeProp);
 }
 
 declare class Rect extends Shape {
     type: ShapeType;
     static MIN_WIDTH: number;
     static MIN_HEIGHT: number;
-    constructor(item: any, index: number);
+    constructor(item: any);
     get ctrlsData(): Point[];
 }
 
@@ -42,6 +40,18 @@ declare enum ShapeType {
 declare enum MarkMode {
     edit = 0,
     rect = 1
+}
+declare enum EventType {
+    Add = "add",
+    Select = "select",
+    Load = "load",
+    Update = "update"
+}
+interface EventCallbacks {
+    [EventType.Add]: (args: AllShape) => void;
+    [EventType.Select]: (args: AllShape) => void;
+    [EventType.Load]: () => void;
+    [EventType.Update]: (args: AllShape[]) => void;
 }
 
 declare class ImgMarker {
@@ -76,7 +86,7 @@ declare class ImgMarker {
     private readonly canvas;
     private ctx;
     /** 所有标注数据 */
-    private dataset;
+    dataset: AllShape[];
     /** 背景图片 */
     private readonly image;
     /** 当前行为 */
@@ -124,10 +134,16 @@ declare class ImgMarker {
        */
     setMode(mode: MarkMode): void;
     /**
-       * 删除指定标注
-       * @param index number
+       * 事件订阅
+       * @param eventName 事件名称
+       * @param cb 回调方法
        */
-    deleteByIndex(index: number): void;
+    on<T extends EventType>(eventName: T, cb: EventCallbacks[T]): void;
+    /**
+       * 删除指定标注
+       * @param uuid string
+       */
+    deleteByUuid(uuid: string): void;
     /**
        * 更新画布
        */
@@ -204,4 +220,4 @@ declare class ImgMarker {
     private changeCursor;
 }
 
-export { MarkMode, ShapeType, ImgMarker as default };
+export { EventType, MarkMode, ShapeType, ImgMarker as default };

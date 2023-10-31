@@ -16,3 +16,14 @@ export const createUuid = (): string => {
 export const isMobile = (): boolean => {
   return window.navigator?.userAgent.includes('Mobile')
 }
+
+export const throttle = (func: any, delay: number = 200) => {
+  let startTime = Date.now()
+  return (...args: any[]) => {
+    const interval = Date.now() - startTime
+    if (interval >= delay) {
+      startTime = Date.now()
+      return func(...args)
+    }
+  }
+}

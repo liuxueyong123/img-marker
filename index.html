@@ -82,6 +82,22 @@
         },
       ])
 
+      imgMarker.on(ImgMarker.EventType.Load, () => {
+        console.log('img loaded')
+      })
+
+      imgMarker.on(ImgMarker.EventType.Add, (shape) => {
+        console.log('added', shape)
+      })
+
+      imgMarker.on(ImgMarker.EventType.Select, (shape) => {
+        console.log('selected', shape)
+      })
+
+      imgMarker.on(ImgMarker.EventType.Update, (shapes) => {
+        console.log('updated', shapes)
+      })
+
       const rectBtn = document.querySelector('#rectBtn')
       const editBtn = document.querySelector('#editBtn')
 

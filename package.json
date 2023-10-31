@@ -13,7 +13,7 @@
   "name": "img-marker",
   "displayName": "Img Marker",
   "description": "一个基于 canvas 的简单轻量级的图片标注库，支持多种图形标注 🚀🚀🚀",
-  "version": "0.0.1",
+  "version": "0.0.2",
   "publisher": "liuxueyong123",
   "author": {
     "name": "liuxueyong123",

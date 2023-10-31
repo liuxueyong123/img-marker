@@ -7,8 +7,8 @@ export default class Rect extends Shape {
   public static MIN_WIDTH = 10
   public static MIN_HEIGHT = 10
 
-  constructor (item: any, index: number) {
-    super(item, index)
+  constructor (item: any) {
+    super(item)
     this.type = ShapeType.rect
   }
 

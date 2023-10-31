@@ -23,13 +23,10 @@ export default class Shape {
   public creating: boolean = false
   /** 当前是否处于拖拽状态 */
   public dragging: boolean = false
-  /** 索引 */
-  public index: number
   /** 唯一标识 */
   public uuid: string = createUuid()
 
-  constructor (item: ShapeProp, index: number) {
-    this.index = index
+  constructor (item: ShapeProp) {
     Object.assign(this, item)
   }
 }

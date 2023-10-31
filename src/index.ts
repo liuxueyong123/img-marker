@@ -1,6 +1,7 @@
+import eventBus from './eventBus'
 import Rect from './shape/Rect'
-import { isMobile } from './tools'
-import { ShapeType, type AllShape, type Point, MarkMode } from './type'
+import { isMobile, throttle } from './tools'
+import { ShapeType, type AllShape, type Point, MarkMode, EventType, type EventCallbacks } from './type'
 
 class ImgMarker {
   /** 画布宽度 */
@@ -17,27 +18,27 @@ class ImgMarker {
   private IMAGE_HEIGHT = 0
 
   /** 边线颜色 */
-  strokeStyle = '#FFE729'
+  public strokeStyle = '#FFE729'
   /** 填充颜色 */
-  fillStyle = 'rgba(255,231,41, 0.2)'
+  public fillStyle = 'rgba(255,231,41, 0.2)'
   /** 边线宽度 */
-  lineWidth = 4
+  public lineWidth = 4
   /** 当前选中的标注边线颜色 */
-  activeStrokeStyle = '#FFE729'
+  public activeStrokeStyle = '#FFE729'
   /** 当前选中的标注填充颜色 */
-  activeFillStyle = 'rgba(255,231,41, 0.2)'
+  public activeFillStyle = 'rgba(255,231,41, 0.2)'
   /** 控制点边线颜色 */
-  ctrlStrokeStyle = '#505E72'
+  public ctrlStrokeStyle = '#505E72'
   /** 控制点填充颜色 */
-  ctrlFillStyle = '#fff'
+  public ctrlFillStyle = '#fff'
   /** 控制点半径 */
-  ctrlRadius = 4
+  public ctrlRadius = 4
 
   private readonly canvas!: HTMLCanvasElement
   private ctx!: CanvasRenderingContext2D
 
   /** 所有标注数据 */
-  private dataset: AllShape[] = []
+  public dataset: AllShape[] = []
   /** 背景图片 */
   private readonly image: HTMLImageElement = new Image()
   /** 当前行为 */
@@ -59,7 +60,7 @@ class ImgMarker {
   constructor (el: HTMLCanvasElement | string, src?: string) {
     this.handleLoad = this.handleLoad.bind(this)
     this.handleMouseDown = this.handleMouseDown.bind(this)
-    this.handelMouseMove = this.handelMouseMove.bind(this)
+    this.handelMouseMove = throttle(this.handelMouseMove.bind(this), 16.7)
     this.handelMouseUp = this.handelMouseUp.bind(this)
     this.handelKeyup = this.handelKeyup.bind(this)
 
@@ -140,11 +141,11 @@ class ImgMarker {
         const curPoint: Point = [mouseX, mouseY]
         switch (this.currentMode) {
           case MarkMode.rect:
-            newShape = new Rect({ coor: [curPoint, curPoint] }, this.dataset.length)
+            newShape = new Rect({ coor: [curPoint, curPoint] })
             newShape.creating = true
             break
           default:
-            newShape = new Rect({ coor: [curPoint, curPoint] }, this.dataset.length)
+            newShape = new Rect({ coor: [curPoint, curPoint] })
             newShape.creating = true
             break
         }
@@ -152,18 +153,20 @@ class ImgMarker {
         newShape.active = true
         this.dataset.push(newShape)
       } else { // 是否点击到形状
-        const { isOnShape, index, shape } = this.isHitOnShape(mouse)
+        const { isOnShape, shape, index } = this.isHitOnShape(mouse)
         if (!isOnShape) {
           if (this.activeShape) {
             this.activeShape.active = false
           }
-          this.dataset.sort((a, b) => a.index - b.index)
         } else {
-          this.changeCursor('move')
-          this.dataset.map((item, i) => item.active = i === index)
+          if (this.activeShape?.uuid !== shape.uuid) {
+            eventBus.emit(EventType.Select, shape)
+          }
+          this.dataset.map((item) => item.active = item.uuid === shape.uuid)
           shape.dragging = true
           this.dataset.splice(index, 1)
           this.dataset.push(shape)
+          this.changeCursor('move')
         }
       }
 
@@ -265,6 +268,7 @@ class ImgMarker {
             this.activeShape.creating = false
           }
         }
+        eventBus.emit(EventType.Add, this.activeShape)
         this.update()
       }
     }
@@ -275,7 +279,7 @@ class ImgMarker {
 
     if (this.activeShape?.type) {
       if (e.key === 'Backspace' || e.key === 'Escape') {
-        this.deleteByIndex(this.activeShape.index)
+        this.deleteByUuid(this.activeShape.uuid)
       }
     }
   }
@@ -300,12 +304,12 @@ class ImgMarker {
      * @param data Array
      */
   public setData (data: AllShape[]): void {
-    this.dataset = data.map((item, index) => {
+    this.dataset = data.map((item) => {
       switch (item.type) {
         case ShapeType.rect:
-          return new Rect(item, index)
+          return new Rect(item)
         default:
-          return new Rect(item, index)
+          return new Rect(item)
       }
     })
     this.update()
@@ -320,14 +324,22 @@ class ImgMarker {
   }
 
   /**
-     * 删除指定标注
-     * @param index number
+     * 事件订阅
+     * @param eventName 事件名称
+     * @param cb 回调方法
      */
-  public deleteByIndex (index: number) {
-    const num = this.dataset.findIndex((x) => x.index === index)
+  on<T extends EventType>(eventName: T, cb: EventCallbacks[T]) {
+    eventBus.on(eventName, cb)
+  }
+
+  /**
+     * 删除指定标注
+     * @param uuid string
+     */
+  public deleteByUuid (uuid: string) {
+    const num = this.dataset.findIndex((x) => x.uuid === uuid)
     if (num > -1) {
       this.dataset.splice(num, 1)
-      this.dataset.forEach((item, i) => { item.index = i })
       this.update()
     }
   }
@@ -343,6 +355,7 @@ class ImgMarker {
       this.drawCtrlList(this.activeShape)
     }
     this.ctx.restore()
+    eventBus.emit(EventType.Update, this.dataset)
   }
 
   /**
@@ -430,6 +443,9 @@ class ImgMarker {
     this.canvas.style.backgroundSize = 'contain'
     this.canvas.style.backgroundRepeat = 'no-repeat'
     this.canvas.style.backgroundPosition = 'center center'
+    this.image.onload = () => {
+      eventBus.emit(EventType.Load)
+    }
   }
 
   /**
@@ -437,6 +453,9 @@ class ImgMarker {
      * @param url 图片链接
      */
   public exportImg (type = 'image/png', quality = 1) {
+    if (this.activeShape) {
+      this.activeShape.active = false
+    }
     this.ctx.save()
     this.ctx.clearRect(0, 0, this.CANVAS_WIDTH, this.CANVAS_HEIGHT)
     this.ctx.fillStyle = '#fff'
@@ -521,7 +540,7 @@ class ImgMarker {
     for (let i = this.dataset.length - 1; i >= 0; i--) {
       const shape = this.dataset[i]
       if (
-        (shape.type === ShapeType.rect && this.isPointInRect(mousePoint, (shape).coor))
+        (shape.type === ShapeType.rect && this.isPointInRect(mousePoint, shape.coor))
       ) {
         return {
           isOnShape: true,
@@ -548,4 +567,4 @@ class ImgMarker {
 }
 
 export default ImgMarker
-export { ShapeType, MarkMode }
+export { ShapeType, MarkMode, EventType }
