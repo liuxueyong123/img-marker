@@ -56,7 +56,7 @@ import ImageMarker from 'img-marker'
 ```
 
 ```ts
-import ImageMarker, { MarkMode } from 'img-marker'
+import ImageMarker, { MarkMode, EventType } from 'img-marker'
 
 // 通过 dom 或 css selector 初始化 imgMarker 实例
 const imgMarker = new ImgMarker("#myCanvas", "https://lxy520.top/myImage/202310301200291.png")
@@ -69,11 +69,26 @@ imgMarker.setData([
 ])
 // 设置当前行为模式为：点击创建矩形标注
 imgMarker.setMode(MarkMode.rect)
-// 设置当前行为模式为：图形编辑模式，对标注进行移动和放缩
-imgMarker.setMode(MarkMode.edit)
+
+// 图片加载完成触发回掉函数
+imgMarker.on(EventType.Load, () => {
+  console.log('Image loaded')
+});
+// 添加标注触发回掉函数
+imgMarker.on(EventType.Add, (shape) => {
+  console.log('added shape', shape)
+  // 添加一次标注后将当前行为模式设置为：图形编辑模式，对标注进行移动和放缩
+  imgMarker.setMode(MarkMode.edit);
+});
+// 选中标注触发回掉函数
+imgMarker.on(EventType.Select, (shape) => {
+  console.log('selected shape', shape)
+});
 
 // 将标注结果导出为图片
-const img = imgMarker.exportImg("image/jpeg", 0.9)
+// const img = imgMarker.exportImg("image/jpeg", 0.9)
+// 销毁实例
+// imgMarker.destroy()
 ```
 
 ## API

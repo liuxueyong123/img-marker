@@ -258,17 +258,19 @@ class ImgMarker {
     this.ctrlIndex = -1
     if (this.activeShape?.type) {
       this.activeShape.dragging = false
+      let shouldEmitAdd = true
       if (this.activeShape.creating) {
         if (this.activeShape.type === ShapeType.rect) {
           const [[x0, y0], [x1, y1]] = this.activeShape.coor
           if (Math.abs(x0 - x1) < Rect.MIN_WIDTH || Math.abs(y0 - y1) < Rect.MIN_HEIGHT) {
             this.dataset.pop()
+            shouldEmitAdd = false
           } else {
             this.activeShape.coor = [[Math.min(x0, x1), Math.min(y0, y1)], [Math.max(x0, x1), Math.max(y0, y1)]]
             this.activeShape.creating = false
           }
         }
-        eventBus.emit(EventType.Add, this.activeShape)
+        shouldEmitAdd && eventBus.emit(EventType.Add, this.activeShape)
         this.update()
       }
     }
